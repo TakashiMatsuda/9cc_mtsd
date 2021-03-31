@@ -23,6 +23,8 @@ struct Token{
 
 Token *token;
 
+char *user_input;
+
 /* Output error. This functions is presented in K&R C */
 void error(char *fmt, ...) {
   va_list ap;
@@ -30,6 +32,19 @@ void error(char *fmt, ...) {
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   va_end(ap);
+  exit(1);
+}
+
+void error_at(char* loc, char*fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, " "); // output an empty charactor pos times
+  fprintf(stderr, "^ ");
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
   exit(1);
 }
 
@@ -44,14 +59,14 @@ bool consume(char op) {
 /* load the next token if it is 'op' */
 void expect(char op){
   if (token->kind != TK_RESERVED || token->str[0] != op)
-    error("is not '%c'", op);
+    error_at(token->str, "is not '%c'", op);
   token = token->next;
 }
 
 /* load the next token if it is a number. */
 int expect_number() {
   if (token->kind != TK_NUM)
-    error("is not a number");
+    error_at(token->str, "is not a number");
   int val = token->val;
   token = token->next;
   return val;
@@ -97,7 +112,7 @@ Token *tokenize(char *p) {
       continue;
     }
     else {
-      error("Can not tokenize.");
+      error_at(token->str, "Can not tokenize.");
     }
   }
   push_token(TK_EOF, cur, p);
@@ -106,9 +121,10 @@ Token *tokenize(char *p) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    error("Incorrect number of argument.");
+    error_at(token->str, "Incorrect number of argument.");
     return 1;
   }
+  user_input = argv[1];
   /* write the argument into a global series of tokens. */
   token = tokenize(argv[1]);
 
@@ -136,7 +152,7 @@ int main(int argc, char **argv) {
       printf("  sub rax, %d\n", expect_number());
       continue;
     } else {
-      error("+ or - is expected. %d\n", token->val);
+      error_at(token->str, "+ or - is expected. %d\n", token->val);
     }
   }
   printf("  ret\n");
