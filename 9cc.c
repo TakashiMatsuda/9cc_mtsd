@@ -120,6 +120,16 @@ Token *tokenize(char *p) {
   return head.next;
 }
 
+/**
+ * Node part.
+ * An expression is parsed by this workflow:
+ *
+ * primary := ( expr ) | expr | num
+ * num := [1, 2, ...]
+ * expr := add | mul
+ * add := 
+ */
+
 typedef enum {
   ND_ADD, // +
   ND_SUB, // -
@@ -130,6 +140,9 @@ typedef enum {
 
 typedef struct Node Node;
 
+/** 
+ * This is a node in a tree of tokens.
+ */
 struct Node {
   NodeKind kind; // type of Node
   Node *lhs; // left hand side
@@ -156,6 +169,9 @@ Node *primary();
 Node *mul();
 Node *expr();
 
+/**
+ * 'primary' represents a node that has not been parsed.
+ */
 Node *primary() {
   if (consume('(')) {
     Node *node = expr();
@@ -165,6 +181,26 @@ Node *primary() {
   return new_node_num(expect_number());
 }
 
+/**
+ * 'expr' represents a node that represents an expression in parentheses.
+ */
+Node *expr() {
+  Node *node = mul();
+
+  for (;;) {
+    if (consume('+')) {
+      node = new_node(ND_ADD, node, mul());
+    } else if (consume ('-')) {
+      node = new_node(ND_SUB, node, mul());
+    } else {
+      return node;
+    }
+  }
+}
+
+/**
+ * 'mul' represents a node for the root of multiplying operation.
+ */
 Node *mul() {
   Node *node = primary();
 
@@ -179,19 +215,7 @@ Node *mul() {
   }
 }
 
-Node *expr() {
-  Node *node = mul();
 
-  for (;;) {
-    if (consume('+')) {
-      node = new_node(ND_ADD, node, mul());
-    } else if (consume ('-')) {
-      node = new_node(ND_SUB, node, mul());
-    } else {
-      return node;
-    }
-  }
-}
 
 int main(int argc, char **argv) {
   if (argc != 2) {
