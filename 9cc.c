@@ -113,7 +113,8 @@ Token *tokenize(char *p) {
       continue;
     }
     else {
-      error_at(token->str, "Can not tokenize.");
+      // token is not initialized!!
+      error_at(p, "Can not tokenize.");
     }
   }
   push_token(TK_EOF, cur, p);
@@ -127,7 +128,8 @@ Token *tokenize(char *p) {
  * primary := ( expr ) | expr | num
  * num := [1, 2, ...]
  * expr := add | mul
- * add := 
+ * add := primary + primary
+ * mul := primary * primary
  */
 
 typedef enum {
