@@ -218,6 +218,43 @@ Node *mul() {
 }
 
 
+/**
+ * generate 'push' and 'pop' code for the given node
+ */
+void gen(Node *node) {
+  if (node->kind == ND_NUM) {
+    printf("  push %d\n", node->val);
+    return;
+  }
+
+  // generate 'push' for a left hand side and right one
+  gen(node->lhs);
+  gen(node->rhs);
+
+  // generate 'pop'
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+
+  switch (node->kind) {
+  case ND_ADD:
+    printf("  add rax, rdi\n");
+    break;
+  case ND_SUB:
+    printf("  sub rax, rdi\n");
+    break;
+  case ND_MUL:
+    printf("  imul rax, rdi\n");
+  case ND_DIV:
+    printf("  cqo\n");
+    printf("  idiv rdi\n");
+    break;
+  default:
+    error("unexpected error: unexpected node kind");
+  }
+
+  printf("  push rax\n");
+}
+
 
 int main(int argc, char **argv) {
   if (argc != 2) {
