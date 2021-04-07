@@ -102,7 +102,7 @@ Token *tokenize(char *p) {
       continue;
     }
     // load the token that is reserved one.
-    else if (*p == '+' || *p == '-') {
+    else if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
       cur = push_token(TK_RESERVED, cur, p++);
       continue;
     }
@@ -167,6 +167,9 @@ Node *new_node_num(int val) {
   return node;
 }
 
+/**
+ * These functions consume tokens to struct a tree.
+ */
 Node *primary();
 Node *mul();
 Node *expr();
@@ -184,7 +187,9 @@ Node *primary() {
 }
 
 /**
- * 'expr' represents a node that represents an expression in parentheses.
+ * 'expr' create a node for an add and sub operation.
+ * consumes some tokens for it.
+ * return the root node.
  */
 Node *expr() {
   Node *node = mul();
@@ -201,7 +206,9 @@ Node *expr() {
 }
 
 /**
- * 'mul' represents a node for the root of multiplying operation.
+ * 'mul' create a node for the root of multiplying operation.
+ * consumes some tokens for it.
+ * return the root node.
  */
 Node *mul() {
   Node *node = primary();
@@ -244,6 +251,7 @@ void gen(Node *node) {
     break;
   case ND_MUL:
     printf("  imul rax, rdi\n");
+    break;
   case ND_DIV:
     printf("  cqo\n");
     printf("  idiv rdi\n");
@@ -265,6 +273,9 @@ int main(int argc, char **argv) {
   /* write the argument into a global series of tokens. */
   token = tokenize(argv[1]);
 
+  // consume token and parse it.
+  Node *node = expr();
+
   /**
    * Output the assembly program like this:
    * .intel_syntax noprefix
@@ -276,24 +287,16 @@ int main(int argc, char **argv) {
    *   ret
    */
 
+  // header
   printf(".intel_syntax noprefix\n");
   printf(".globl main\n");
   printf("main:\n");
-  printf("  mov rax, %d\n", expect_number());
 
-  // parse and evaluate
-  
-  while(!at_eof()) {
-    if (consume('+')) {
-      printf("  add rax, %d\n", expect_number());
-      continue;
-    } else if (consume('-')) {
-      printf("  sub rax, %d\n", expect_number());
-      continue;
-    } else {
-      error_at(token->str, "+ or - is expected. %d\n", token->val);
-    }
-  }
+  // generate machine code for tree 'node'
+  gen(node);
+
+  // process to return the value
+  printf("  pop rax\n");
   printf("  ret\n");
   return 0;
 }
