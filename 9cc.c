@@ -6,12 +6,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+/**
+ * Token section.
+ */
 typedef enum {
   TK_RESERVED,
   TK_NUM,
   TK_EOF,
 } TokenKind;
-
 
 typedef struct Token Token;
 
@@ -20,6 +22,7 @@ struct Token{
   Token *next;
   int val;
   char *str;
+  int len;
 };
 
 Token *token;
@@ -49,17 +52,22 @@ void error_at(char* loc, char*fmt, ...) {
   exit(1);
 }
 
-/* load the next token if it is 'op' or TK_RESERVED. */
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
+/* load the next token only if it is 'op' and TK_RESERVED. */
+bool consume(char *op) {
+  if (token->kind != TK_RESERVED || 
+      strlen(op) != token->len ||
+      memcmp(token->str, op, token->len))
     return false;
   token = token->next;
   return true;
 }
 
-/* load the next token if it is 'op' */
-void expect(char op){
-  if (token->kind != TK_RESERVED || token->str[0] != op)
+/* load the next token.
+ * throw error if it is not 'op.' */
+void expect(char *op){
+  if (token->kind != TK_RESERVED || 
+      strlen(op) != token->len ||
+      memcmp(token->str, op, token->len))
     error_at(token->str, "is not '%c'", op);
   token = token->next;
 }
@@ -124,12 +132,14 @@ Token *tokenize(char *p) {
 /**
  * Node part.
  * An expression is parsed by this workflow:
- *
- * primary := ( expr ) | expr | num
- * num := [1, 2, ...]
- * expr := add | mul
- * add := primary + primary
- * mul := primary * primary
+ * 
+ * expr       = equality
+ * equality   = relational ("==" relational | "!=" relational)*
+ * relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+ * add        = mul ("+" mul | "-" mul)*
+ * mul        = unary ("*" unary | "/" unary)*
+ * unary      = ("+" | "-")? primary
+ * primary    = num | "(" expr ")"
  */
 
 typedef enum {
@@ -171,22 +181,12 @@ Node *new_node_num(int val) {
  * These functions consume tokens to struct a tree.
  */
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
-
-/**
- * 'primary' represents a node that has not been parsed.
- */
-Node *primary() {
-  if (consume('(')) {
-    Node *node = expr();
-    expect(')');
-    return node;
-  }
-  return new_node_num(expect_number());
-}
-
 /**
  * 'expr' create a node for an add and sub operation.
  * consumes some tokens for it.
@@ -196,15 +196,28 @@ Node *expr() {
   Node *node = mul();
 
   for (;;) {
-    if (consume('+')) {
+    if (consume("+")) {
       node = new_node(ND_ADD, node, mul());
-    } else if (consume ('-')) {
+    } else if (consume ("-")) {
       node = new_node(ND_SUB, node, mul());
     } else {
       return node;
     }
   }
 }
+
+/**
+ * 'primary' represents a node that has not been parsed.
+ */
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(")");
+    return node;
+  }
+  return new_node_num(expect_number());
+}
+
 
 /**
  * 'mul' create a node for the root of multiplying operation.
@@ -215,9 +228,9 @@ Node *mul() {
   Node *node = unary();
 
   for (;;) {
-    if (consume('*')) {
+    if (consume("*")) {
       node = new_node(ND_MUL, node, unary());
-    } else if (consume('/')) {
+    } else if (consume("/")) {
       node = new_node(ND_DIV, node, unary());
     } else {
       return node;
@@ -226,9 +239,9 @@ Node *mul() {
 }
 
 Node *unary() {
-  if (consume('+'))
+  if (consume("+"))
     return primary();
-  if (consume('-'))
+  if (consume("-"))
     return new_node(ND_SUB, new_node_num(0), primary());
   return primary();
 }
