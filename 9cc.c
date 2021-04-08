@@ -339,6 +339,21 @@ void gen(Node *node) {
     printf("  sete al\n");
     printf("  movzb rax, al\n");
     break;
+  case ND_NEQ:
+    printf("  cmp rax, rdi\n");
+    printf("  setne al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_LT:
+    printf("  cmp rax, rdi\n");
+    printf("  setl al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_LEQ:
+    printf("  cmp rax, rdi\n");
+    printf("  setle al\n");
+    printf("  movzb rax, al\n");
+    break;
   default:
     error("unexpected error: unexpected node kind");
   }
