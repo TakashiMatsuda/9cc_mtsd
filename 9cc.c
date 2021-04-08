@@ -96,6 +96,10 @@ Token *push_token(TokenKind kind, int len, Token *cur, char *str){
   return tok;
 }
 
+int tkncmp(const void *s1, const void *s2) {
+  return !(memcmp(s1, s2, 2));
+}
+
 /* load an array of a charactor into the token */
 Token *tokenize(char *p) {
   Token head;
@@ -111,16 +115,26 @@ Token *tokenize(char *p) {
       continue;
     }
     // load the token that is reserved one.
-    else if (*p == '+' || 
+    else if (
+        *p == '+' || 
         *p == '-' || 
         *p == '*' || 
         *p == '/' || 
         *p == '(' || 
-        *p == ')') {
-      cur = push_token(TK_RESERVED, 1, cur, p++ );
+        *p == ')' || 
+        *p == '<') {
+      cur = push_token(TK_RESERVED, 1, cur, p++);
       continue;
-    } 
-    else if (isdigit(*p)) {
+    } else if (
+        // token with the length is 2
+        tkncmp(p, "==") ||
+        tkncmp(p, "!=") ||
+        tkncmp(p, "<=")
+        ) {
+      p += 2;
+      cur = push_token(TK_RESERVED, 2, cur, p);
+      continue;
+    } else if (isdigit(*p)) {
       // HACK: len is not used when a token is a number.
       cur = push_token(TK_NUM, 0, cur, p);
       /* convert the head part of p into number based 10 */
@@ -154,8 +168,6 @@ typedef enum {
   ND_NEQ, // !=
   ND_LT,  // <
   ND_LEQ, // <=
-  ND_GT,  // >
-  ND_GEQ, // >=
   ND_ADD, // +
   ND_SUB, // -
   ND_MUL, // *
@@ -230,9 +242,9 @@ Node *relational() {
     } else if (consume("<=")) {
       node = new_node(ND_LEQ, node, add());
     } else if (consume(">")) {
-      node = new_node(ND_GT, node, add());
+      node = new_node(ND_LT, add(), node);
     } else if (consume(">=")) {
-      node = new_node(ND_GEQ, node, add());
+      node = new_node(ND_LEQ, add(), node);
     } else {
       return node;
     }
