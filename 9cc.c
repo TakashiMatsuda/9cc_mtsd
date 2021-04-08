@@ -19,10 +19,10 @@ typedef struct Token Token;
 
 struct Token{
   TokenKind kind;
+  int len;
   Token *next;
   int val;
   char *str;
-  int len;
 };
 
 Token *token;
@@ -87,11 +87,11 @@ bool at_eof(){
 }
 
 /* push the new token into cur destructively.*/
-Token *push_token(TokenKind kind, Token *cur, char *str){
+Token *push_token(TokenKind kind, int len, Token *cur, char *str){
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
+  tok->len = len;
   tok->str = str;
-  tok->len = 1;
   cur->next = tok;
   return tok;
 }
@@ -111,12 +111,18 @@ Token *tokenize(char *p) {
       continue;
     }
     // load the token that is reserved one.
-    else if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-      cur = push_token(TK_RESERVED, cur, p++);
+    else if (*p == '+' || 
+        *p == '-' || 
+        *p == '*' || 
+        *p == '/' || 
+        *p == '(' || 
+        *p == ')') {
+      cur = push_token(TK_RESERVED, 1, cur, p++ );
       continue;
-    }
+    } 
     else if (isdigit(*p)) {
-      cur = push_token(TK_NUM, cur, p);
+      // HACK: len is not used when a token is a number.
+      cur = push_token(TK_NUM, 0, cur, p);
       /* convert the head part of p into number based 10 */
       cur->val = strtol(p, &p, 10);
       continue;
@@ -126,7 +132,7 @@ Token *tokenize(char *p) {
       error_at(p, "Can not tokenize.");
     }
   }
-  push_token(TK_EOF, cur, p);
+  push_token(TK_EOF, 0, cur, p);
   return head.next;
 }
 
