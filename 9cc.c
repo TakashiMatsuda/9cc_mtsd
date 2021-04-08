@@ -91,6 +91,7 @@ Token *push_token(TokenKind kind, Token *cur, char *str){
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = 1;
   cur->next = tok;
   return tok;
 }
@@ -143,6 +144,12 @@ Token *tokenize(char *p) {
  */
 
 typedef enum {
+  ND_EQ,  // ==
+  ND_NEQ, // !=
+  ND_LT,  // <
+  ND_LEQ, // <=
+  ND_GT,  // >
+  ND_GEQ, // >=
   ND_ADD, // +
   ND_SUB, // -
   ND_MUL, // *
@@ -193,31 +200,51 @@ Node *primary();
  * return the root node.
  */
 Node *expr() {
-  Node *node = mul();
+  return equality();
+}
 
+Node *equality() {
+  Node *node = relational();
   for (;;) {
-    if (consume("+")) {
-      node = new_node(ND_ADD, node, mul());
-    } else if (consume ("-")) {
-      node = new_node(ND_SUB, node, mul());
+    if (consume("==")) {
+        node = new_node(ND_EQ, node, relational());
+    } else if (consume("!=")) {
+        node = new_node(ND_NEQ, node, relational());
     } else {
       return node;
     }
   }
 }
 
-/**
- * 'primary' represents a node that has not been parsed.
- */
-Node *primary() {
-  if (consume("(")) {
-    Node *node = expr();
-    expect(")");
-    return node;
+Node *relational() {
+  Node *node =  add();
+  for (;;) {
+    if (consume("<")) {
+      node = new_node(ND_LT, node, add());
+    } else if (consume("<=")) {
+      node = new_node(ND_LEQ, node, add());
+    } else if (consume(">")) {
+      node = new_node(ND_GT, node, add());
+    } else if (consume(">=")) {
+      node = new_node(ND_GEQ, node, add());
+    } else {
+      return node;
+    }
   }
-  return new_node_num(expect_number());
 }
 
+Node *add() {
+  Node *node = mul();
+  for (;;) {
+    if (consume("+")) {
+      node = new_node(ND_ADD, node, mul());
+    } else if (consume("-")) {
+      node = new_node(ND_SUB, node, mul());
+    } else {
+      return node;
+    }
+  }
+}
 
 /**
  * 'mul' create a node for the root of multiplying operation.
@@ -246,6 +273,17 @@ Node *unary() {
   return primary();
 }
 
+/**
+ * 'primary' represents a node that has not been parsed.
+ */
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(")");
+    return node;
+  }
+  return new_node_num(expect_number());
+}
 
 /**
  * generate 'push' and 'pop' code for the given node
