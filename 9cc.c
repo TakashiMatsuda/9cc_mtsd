@@ -131,8 +131,8 @@ Token *tokenize(char *p) {
         tkncmp(p, "!=") ||
         tkncmp(p, "<=")
         ) {
-      p += 2;
       cur = push_token(TK_RESERVED, 2, cur, p);
+      p += 2;
       continue;
     } else if (isdigit(*p)) {
       // HACK: len is not used when a token is a number.
