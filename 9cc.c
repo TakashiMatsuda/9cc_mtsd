@@ -11,6 +11,7 @@
  */
 typedef enum {
   TK_RESERVED,
+  TK_IDENT,
   TK_NUM,
   TK_EOF,
 } TokenKind;
@@ -134,6 +135,9 @@ Token *tokenize(char *p) {
       cur = push_token(TK_RESERVED, 2, cur, p);
       p += 2;
       continue;
+    } else if ('a' <= *p && *p <= 'z') {
+      cur = push_token(TK_IDENT, 1, cur, p++);
+      continue;
     } else if (isdigit(*p)) {
       // HACK: len is not used when a token is a number.
       cur = push_token(TK_NUM, 0, cur, p);
@@ -154,13 +158,16 @@ Token *tokenize(char *p) {
  * Node part.
  * An expression is parsed by this workflow:
  * 
- * expr       = equality
+ * program    = stmt*
+ * stmt       = expr ";"
+ * expr       = assign
+ * assign     = equality ("=" assign)?
  * equality   = relational ("==" relational | "!=" relational)*
  * relational = add ("<" add | "<=" add | ">" add | ">=" add)*
  * add        = mul ("+" mul | "-" mul)*
  * mul        = unary ("*" unary | "/" unary)*
  * unary      = ("+" | "-")? primary
- * primary    = num | "(" expr ")"
+ * primary    = num | ident | "(" expr ")"
  */
 
 typedef enum {
@@ -172,6 +179,8 @@ typedef enum {
   ND_SUB, // -
   ND_MUL, // *
   ND_DIV, // /
+  ND_ASSIGN, // =
+  ND_LVAR,// local variable
   ND_NUM, // number
 } NodeKind;
 
@@ -186,6 +195,9 @@ struct Node {
   Node *rhs; // right hand side
   int val; // number
 };
+
+/* stored trees */
+Node *code[100];
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -202,10 +214,12 @@ Node *new_node_num(int val) {
   return node;
 }
 
+
 /**
  * These functions consume tokens to struct a tree.
  */
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
@@ -219,6 +233,12 @@ Node *primary();
  */
 Node *expr() {
   return equality();
+}
+
+Node *assign() {
+  Node *node = equality();
+  if (consume("="))
+    node = new_node(ND_ASSIGN, node, assign());
 }
 
 Node *equality() {
@@ -302,6 +322,7 @@ Node *primary() {
   }
   return new_node_num(expect_number());
 }
+
 
 /**
  * generate 'push' and 'pop' code for the given node
