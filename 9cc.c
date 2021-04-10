@@ -63,6 +63,15 @@ bool consume(char *op) {
   return true;
 }
 
+char *consume_ident() {
+  if(token->kind != TK_IDENT) {
+    return NULL;
+  }
+  char *name = token->str[0];
+  token = token->next;
+  return name;
+}
+
 /* load the next token.
  * throw error if it is not 'op.' */
 void expect(char *op){
@@ -194,6 +203,7 @@ struct Node {
   Node *lhs; // left hand side
   Node *rhs; // right hand side
   int val; // number
+  int offset; // an offset from the base pointer to an address of a local variable
 };
 
 /* stored trees */
@@ -226,19 +236,34 @@ Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+
+Node *assign() {
+  Node *node = equality();
+  if (consume("="))
+    node = new_node(ND_ASSIGN, node, assign());
+  return node;
+}
+
 /**
  * 'expr' create a node for an add and sub operation.
  * consumes some tokens for it.
  * return the root node.
  */
 Node *expr() {
-  return equality();
+  return assign();
 }
 
-Node *assign() {
-  Node *node = equality();
-  if (consume("="))
-    node = new_node(ND_ASSIGN, node, assign());
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+void program() {
+  int i = 0;
+  while(!at_eof())
+    code[i++] = stmt();
+  code[i] = NULL;
 }
 
 Node *equality() {
@@ -315,11 +340,20 @@ Node *unary() {
  * 'primary' represents a node that has not been parsed.
  */
 Node *primary() {
+  /* matches ( expr ) */
   if (consume("(")) {
     Node *node = expr();
     expect(")");
     return node;
+  } 
+  /* matches ident */
+  if (consume_ident()) {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (tok->str[0] - 'a' + 1) * 8;
+    return node;
   }
+  /* matches num */
   return new_node_num(expect_number());
 }
 
