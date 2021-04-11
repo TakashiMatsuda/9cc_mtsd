@@ -127,9 +127,17 @@ Token *tokenize(char *p) {
     if (isspace(*p)) {
       p++;
       continue;
-    }
-    // load the token that is reserved one.
-    else if (
+    } else if (
+      // load the token that is reserved one.
+      // token with the length is 2
+        tkncmp(p, "==") ||
+        tkncmp(p, "!=") ||
+        tkncmp(p, "<=")
+        ) {
+      cur = push_token(TK_RESERVED, 2, cur, p);
+      p += 2;
+      continue;
+    } else if (
         *p == '=' ||
         *p == ';' ||
         *p == '+' || 
@@ -140,15 +148,6 @@ Token *tokenize(char *p) {
         *p == ')' || 
         *p == '<') {
       cur = push_token(TK_RESERVED, 1, cur, p++);
-      continue;
-    } else if (
-        // token with the length is 2
-        tkncmp(p, "==") ||
-        tkncmp(p, "!=") ||
-        tkncmp(p, "<=")
-        ) {
-      cur = push_token(TK_RESERVED, 2, cur, p);
-      p += 2;
       continue;
     } else if ('a' <= *p && *p <= 'z') {
       cur = push_token(TK_IDENT, 1, cur, p++);
@@ -369,7 +368,7 @@ void gen_lval(Node *node) {
   if (node->kind != ND_LVAR) 
     error("The left hand side of substitution is not a variable.");
   
-  printf("  mov rax rbp\n");
+  printf("  mov rax, rbp\n");
   printf("  sub rax, %d\n", node->offset);
   printf("  push rax\n");
 }

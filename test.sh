@@ -33,6 +33,8 @@ assert 0 '42!=42;'
 
 assert 1 '0<1;'
 assert 0 '1<1;'
-assert 0 "a = 1;"
+assert 1 'a = 1;'
+assert 100 'a = 100;'
+assert 3 "a = 1; b = 2; a + b;"
 
 echo OK
