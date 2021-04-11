@@ -23,7 +23,7 @@ struct Token{
   int len;
   Token *next;
   int val;
-  char *str;
+  char *str; //
 };
 
 Token *token;
@@ -63,13 +63,17 @@ bool consume(char *op) {
   return true;
 }
 
-char *consume_ident() {
+/**
+ * load the next token only if it is 'ident'.
+ * move the cursor to the next, and return a current cursor
+ */
+Token *consume_ident() {
   if(token->kind != TK_IDENT) {
     return NULL;
   }
-  char *name = token->str[0];
+  Token *cur = token;
   token = token->next;
-  return name;
+  return cur;
 }
 
 /* load the next token.
@@ -126,6 +130,8 @@ Token *tokenize(char *p) {
     }
     // load the token that is reserved one.
     else if (
+        *p == '=' ||
+        *p == ';' ||
         *p == '+' || 
         *p == '-' || 
         *p == '*' || 
@@ -347,7 +353,8 @@ Node *primary() {
     return node;
   } 
   /* matches ident */
-  if (consume_ident()) {
+  Token *tok = consume_ident();
+  if (tok) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
     node->offset = (tok->str[0] - 'a' + 1) * 8;
@@ -358,12 +365,38 @@ Node *primary() {
 }
 
 
+void gen_lval(Node *node) {
+  if (node->kind != ND_LVAR) 
+    error("The left hand side of substitution is not a variable.");
+  
+  printf("  mov rax rbp\n");
+  printf("  sub rax, %d\n", node->offset);
+  printf("  push rax\n");
+}
+
+
 /**
  * generate 'push' and 'pop' code for the given node
  */
 void gen(Node *node) {
-  if (node->kind == ND_NUM) {
+  switch (node->kind) {
+  case ND_NUM:
     printf("  push %d\n", node->val);
+    return;
+  case ND_LVAR:
+    gen_lval(node);
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+    return;
+  case ND_ASSIGN:
+    gen_lval(node->lhs);
+    gen(node->rhs);
+
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov [rax], rdi\n");
+    printf("  push rdi\n");
     return;
   }
 
@@ -427,7 +460,7 @@ int main(int argc, char **argv) {
   token = tokenize(argv[1]);
 
   // consume token and parse it.
-  Node *node = expr();
+  program();
 
   /**
    * Output the assembly program like this:
@@ -445,11 +478,19 @@ int main(int argc, char **argv) {
   printf(".globl main\n");
   printf("main:\n");
 
-  // generate machine code for tree 'node'
-  gen(node);
+  // get the space of 26 local variables
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
 
+  // generate machine code for tree 'node'
+  for (int i = 0; code[i]; i++){
+    gen(code[i]);
+    printf("  pop rax\n");
+  }
   // process to return the value
-  printf("  pop rax\n");
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
   printf("  ret\n");
   return 0;
 }
