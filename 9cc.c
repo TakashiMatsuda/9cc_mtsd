@@ -134,7 +134,12 @@ Token *tokenize(char *p) {
       cur = push_token(TK_RESERVED, 1, cur, p++);
       continue;
     } else if ('a' <= *p && *p <= 'z') {
+      // multi letter variable
+      // local variable
+      // must start with an alphabet
       cur = push_token(TK_IDENT, 1, cur, p++);
+      cur->str = strtok(p, "/s"); //want to add multi delimiter
+      cur->len = strlen(cur->str);
       continue;
     } else if (isdigit(*p)) {
       // HACK: len is not used when a token is a number.

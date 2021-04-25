@@ -15,7 +15,7 @@ struct Token{
   TokenKind kind;
   int len;
   Token *next;
-  int val;
+  int val; // value of number
   char *str; //
 };
 
