@@ -98,6 +98,22 @@ int tkncmp(const void *s1, const void *s2) {
   return !(memcmp(s1, s2, 2));
 }
 
+bool is_ident_char(char *c) {
+  if ('a' <= *c && *c <= 'z') {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+int len_var(char *str){
+  char *tmpp = str;
+  int l;
+  for (l = 0; *tmpp && is_ident_char(tmpp); l++, tmpp++){
+  }
+  return l;
+}
+
 /* load an array of a charactor into the token */
 Token *tokenize(char *p) {
   Token head;
@@ -133,13 +149,12 @@ Token *tokenize(char *p) {
         *p == '<') {
       cur = push_token(TK_RESERVED, 1, cur, p++);
       continue;
-    } else if ('a' <= *p && *p <= 'z') {
+    } else if (is_ident_char(p)) {
       // local variable
       // must start with an alphabet
       cur = push_token(TK_IDENT, 1, cur, p);
-      char *tmpp = p;
-      cur->str = strtok(tmpp, " "); //want to add multi delimiter
-      cur->len = strlen(cur->str);
+      // handle multiple charactors
+      cur->len = len_var(p);
       p += cur->len;
       continue;
     } else if (isdigit(*p)) {

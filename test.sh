@@ -36,5 +36,6 @@ assert 0 '1<1;'
 assert 1 'a = 1;'
 assert 100 'a = 100;'
 assert 3 "a = 1; b = 2; a + b;"
+assert 1 'avar = 1;'
 
 echo OK
