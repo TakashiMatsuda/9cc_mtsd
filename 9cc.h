@@ -16,9 +16,22 @@ struct Token{
   int len;
   Token *next;
   int val; // value of number
-  char *str; //
+  char *str; 
 };
 
+// Local Variable
+typedef struct LVar LVar;
+
+struct LVar {
+  LVar *next; // LVar is Linked list
+  char *name; // the name of this variable (determined by len)
+  int len; // the length of this variable
+  int offset; // the offset in the stack for this variable to be stored 
+};
+
+
+/* Find the local variable correspond to the token from globally defined 'locals' */
+LVar *find_lvar(Token *tok);
 bool consume(char *op);
 Token *consume_ident();
 void expect(char *op);
