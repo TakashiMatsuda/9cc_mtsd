@@ -39,8 +39,7 @@ void error_at(char* loc, char*fmt, ...) {
 
 /* load the next token only if it is 'op' and TK_RESERVED. */
 bool consume(char *op) {
-  if (token->kind != TK_RESERVED || 
-      token->kind != TK_RETURN ||
+  if (!(token->kind == TK_RESERVED || token->kind == TK_RETURN) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
