@@ -4,6 +4,7 @@
  */
 typedef enum {
   TK_RESERVED,
+  TK_RETURN,
   TK_IDENT,
   TK_NUM,
   TK_EOF,
@@ -45,7 +46,7 @@ Token *tokenize(char *p);
  * An expression is parsed by this workflow:
  * 
  * program    = stmt*
- * stmt       = expr ";"
+ * stmt       = expr ";" | "return" expr ";"
  * expr       = assign
  * assign     = equality ("=" assign)?
  * equality   = relational ("==" relational | "!=" relational)*
@@ -66,6 +67,7 @@ typedef enum {
   ND_MUL, // *
   ND_DIV, // /
   ND_ASSIGN, // =
+  ND_RETURN, // return
   ND_LVAR,// local variable
   ND_NUM, // number
 } NodeKind;
@@ -74,6 +76,7 @@ typedef struct Node Node;
 
 /** 
  * This is a node in a tree of tokens.
+ * Node: lhs x rhs -> value
  */
 struct Node {
   NodeKind kind; // type of Node

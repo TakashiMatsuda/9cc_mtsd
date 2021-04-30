@@ -38,5 +38,7 @@ assert 100 'a = 100;'
 assert 3 "a = 1; b = 2; a + b;"
 assert 1 'avar = 1;'
 assert 3 "ab = 1; ac = 2; ab + ac;"
+assert 2 "i = 1; i = i + 1; i;"
+assert 14 "a = 3; b = 5 * 6 - 8; return a + b / 2;"
 
 echo OK

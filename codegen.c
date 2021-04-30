@@ -15,6 +15,7 @@ void gen_lval(Node *node) {
  */
 void gen(Node *node) {
   switch (node->kind) {
+    // nodes which end with return
   case ND_NUM:
     printf("  push %d\n", node->val);
     return;
@@ -33,6 +34,15 @@ void gen(Node *node) {
     printf("  mov [rax], rdi\n");
     printf("  push rdi\n");
     return;
+  case ND_RETURN:
+    gen(node->lhs);
+    // pop the top of stack then set its value to rax.
+    printf("  pop rax\n");
+    // process to return the value
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
+    return;
   }
 
   // generate 'push' for a left hand side and right one
@@ -44,6 +54,7 @@ void gen(Node *node) {
   printf("  pop rax\n");
 
   switch (node->kind) {
+    // nodes which ends with break
   case ND_ADD:
     printf("  add rax, rdi\n");
     break;
