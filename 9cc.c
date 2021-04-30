@@ -155,6 +155,7 @@ Token *tokenize(char *p) {
     } else if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
       // reserved word 'return'
       push_token(TK_RETURN, 6, cur, p);
+      p += 6;
       continue;
     } else if (is_ident_char(p)) {
       // local variable
