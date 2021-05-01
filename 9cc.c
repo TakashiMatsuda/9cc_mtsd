@@ -39,7 +39,9 @@ void error_at(char* loc, char*fmt, ...) {
 
 /* load the next token only if it is 'op' and TK_RESERVED. */
 bool consume(char *op) {
-  if (!(token->kind == TK_RESERVED || token->kind == TK_RETURN) ||
+  if ((!(token->kind == TK_RESERVED || 
+        token->kind == TK_RETURN ||
+        token->kind == TK_IF)) ||
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
     return false;
@@ -154,8 +156,12 @@ Token *tokenize(char *p) {
       continue;
     } else if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
       // reserved word 'return'
-      push_token(TK_RETURN, 6, cur, p);
+      cur = push_token(TK_RETURN, 6, cur, p);
       p += 6;
+      continue;
+    } else if (strncmp(p, "if", 2) == 0 && !is_alnum(p[2])) {
+      cur = push_token(TK_IF, 2, cur, p);
+      p += 2;
       continue;
     } else if (is_ident_char(p)) {
       // local variable

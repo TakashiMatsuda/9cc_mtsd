@@ -27,11 +27,28 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Node *new_if_node(NodeKind kind, Node *cond, Node *then) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = kind;
+  node->cond = cond;
+  node->then = then;
+  return node;
+}
 
-Node *assign() {
-  Node *node = equality();
-  if (consume("="))
-    node = new_node(ND_ASSIGN, node, assign());
+Node *stmt() {
+  Node *node;
+  if (consume("return")) {
+    // HACK: only lhs is used to generate code
+    node = new_node(ND_RETURN, expr(), NULL);
+  } else if (consume("if")) {
+    // TOKEN_IF ( expr() ) stmt()
+    Node *cond = primary();
+    node = new_if_node(ND_IF, cond, stmt());
+    return node;
+  } else {
+    node = expr();
+  }
+  expect(";");
   return node;
 }
 
@@ -44,18 +61,12 @@ Node *expr() {
   return assign();
 }
 
-Node *stmt() {
-  Node *node;
-  if (consume("return")) {
-    // HACK: only lhs is used to generate code
-    node = new_node(ND_RETURN, expr(), NULL);
-  } else {
-    node = expr();
-  }
-  expect(";");
+Node *assign() {
+  Node *node = equality();
+  if (consume("="))
+    node = new_node(ND_ASSIGN, node, assign());
   return node;
 }
-
 
 Node *equality() {
   Node *node = relational();

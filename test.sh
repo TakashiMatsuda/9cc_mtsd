@@ -40,5 +40,9 @@ assert 1 'avar = 1;'
 assert 3 "ab = 1; ac = 2; ab + ac;"
 assert 2 "i = 1; i = i + 1; i;"
 assert 14 "a = 3; b = 5 * 6 - 8; return a + b / 2;"
+assert 0 "0; if (0) return 2; "
+assert 2 "if (1) return 2; "
+assert 0 "if (0) return 1; else return 0;"
+assert 3 "if (0) return 1; else if (0) return 2; else if (1) return 3;"
 
 echo OK
